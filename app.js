@@ -3,6 +3,7 @@ let path = require('path');
 let cookieParser = require('cookie-parser');
 let logger = require('morgan');
 let cron = require('node-cron');
+let debug = require('debug')('cli-api:server');
 require('dotenv').config();
 const { exec } = require('child_process');
 
@@ -24,29 +25,25 @@ cron.schedule('* * * * *', () => {
 app.use(['/', '/capacity'], router);
 
 function getUsage(volume) {
-    console.log('running a task every minute');
+    if(volume === "" || volume === undefined || volume === null) {
+        console.log("No disk configured.  Check your .env file.");
+        debug("No disk configured.  Check your .env file.");
+        return;
+    }
     let outputArray = [];
-    exec('df -h', (err, stdout, stderr) => {
-        if (err) {
-            //some err occurred
-            console.error(err);
-        } else {
-            // the *entire* stdout and stderr (buffered)
-            outputArray = stdout.split('\n');
-            for(let i = 0; outputArray.length > i; i++){
-                if(outputArray[i].includes(volume)) {
-                    let capacityTotal = outputArray[i].substring(13, 20).trim();
-                    let spaceUsed = outputArray[i].substring(21, 27).trim();
-                    let spaceAvailable = outputArray[i].substring(29, 35).trim();
-                    let usagePercentage = outputArray[i].substring(37, 40).trim()/100;
-                    let parsedData = {
-                        size: capacityTotal,
-                        used: spaceUsed,
-                        available: spaceAvailable,
-                        usagePercentage: usagePercentage,
-                    };
-                    app.set('capacity', parsedData);
-                }
+    const capacityCheck = exec('./scripts/capacity.sh');
+    capacityCheck.stdout.on('data', (data)=>{
+        outputArray = data.split('\n');
+        for(let i = 0; outputArray.length > i; i++){
+            if(outputArray[i].startsWith(volume.trim())) {
+                let source = outputArray[i].split(' ');
+                let capacity = {
+                    size: source[1],
+                    used: source[2],
+                    available: source[3],
+                    usagePercentage: (source[4].replace('%', '')/100),
+                };
+                app.set('capacity', capacity);
             }
         }
     });
