@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
+    "init": "./issue-cert.sh",
     "start": "node ./bin/www"
   },
   "dependencies": {
