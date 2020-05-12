@@ -7,11 +7,12 @@
 let app = require('../app');
 let debug = require('debug')('cli-api:server');
 let https = require('https');
+let path = require('path');
 const fs = require('fs');
 
 const options = {
-  key: fs.readFileSync('./cert/key.pem'),
-  cert: fs.readFileSync('./cert/cert.pem')
+  key: fs.readFileSync(path.resolve(__dirname, '../cert/key.pem')),
+  cert: fs.readFileSync(path.resolve(__dirname, '../cert/cert.pem'))
 };
 
 /**
